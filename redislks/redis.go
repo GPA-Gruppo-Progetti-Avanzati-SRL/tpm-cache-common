@@ -26,7 +26,11 @@ func (lks *LinkedService) Name() string {
 	return lks.cfg.Name
 }
 
-func (lks *LinkedService) GetClient(aDb int) (*redis.Client, error) {
+func (lks *LinkedService) Type() string {
+	return RedisLinkedServiceType
+}
+
+func (lks *LinkedService) getClient(aDb int) (*redis.Client, error) {
 
 	if aDb == RedisUseLinkedServiceConfiguredIndex {
 		aDb = lks.cfg.Db
@@ -62,7 +66,7 @@ func (lks *LinkedService) Set(ctx context.Context, db int, key string, value int
 		_ = lks.setMetrics(start, lbls)
 	}(beginOf)
 
-	rdb, err := lks.GetClient(db)
+	rdb, err := lks.getClient(db)
 	if err != nil {
 		return err
 	}
@@ -91,7 +95,7 @@ func (lks *LinkedService) Get(ctx context.Context, db int, key string) (interfac
 		_ = lks.setMetrics(start, lbls)
 	}(beginOf)
 
-	rdb, err := lks.GetClient(db)
+	rdb, err := lks.getClient(db)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +117,7 @@ func (lks *LinkedService) Get(ctx context.Context, db int, key string) (interfac
 const (
 	MetricIdStatusCode     = "status-code"
 	MetricIdCacheOperation = "operation"
+	MetricIdCacheType      = "cache-type"
 )
 
 func (lks *LinkedService) MetricsLabels(m string) prometheus.Labels {
@@ -120,6 +125,7 @@ func (lks *LinkedService) MetricsLabels(m string) prometheus.Labels {
 	metricsLabels := prometheus.Labels{
 		MetricIdStatusCode:     fmt.Sprint(http.StatusInternalServerError),
 		MetricIdCacheOperation: m,
+		MetricIdCacheType:      RedisLinkedServiceType,
 	}
 
 	return metricsLabels

@@ -11,6 +11,10 @@ const (
 	RedisUseLinkedServiceConfiguredIndex = -1
 )
 
+const (
+	RedisLinkedServiceType = "redis"
+)
+
 type Config struct {
 	Name         string                          `mapstructure:"name,omitempty" json:"name,omitempty" yaml:"name,omitempty"`
 	Addr         string                          `mapstructure:"addr,omitempty" json:"addr,omitempty" yaml:"addr,omitempty"`
