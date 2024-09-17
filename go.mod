@@ -1,4 +1,4 @@
-module tpm-cache-common
+module github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common
 
 go 1.23.0
 
