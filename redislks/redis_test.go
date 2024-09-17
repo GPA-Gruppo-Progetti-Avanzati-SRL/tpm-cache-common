@@ -3,7 +3,7 @@ package redislks_test
 import (
 	"context"
 	"fmt"
-	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-chorus/linkedservices/redislks"
+	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/redislks"
 	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
