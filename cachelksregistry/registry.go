@@ -1,14 +1,21 @@
-package cachelks
+package cachelksregistry
 
 import (
 	"fmt"
-	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/redislks"
+	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks"
+	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks/redislks"
+	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-common/util/promutil"
 	"github.com/rs/zerolog/log"
 )
 
+type Config struct {
+	Redis      []redislks.Config               `mapstructure:"redis,omitempty" json:"redis,omitempty" yaml:"redis,omitempty"`
+	MetricsCfg promutil.MetricsConfigReference `yaml:"metrics,omitempty" mapstructure:"metrics,omitempty" json:"metrics,omitempty"`
+}
+
 const DefaultCacheBrokerName = "default"
 
-type LinkedServices []LinkedService
+type LinkedServices []cachelks.LinkedService
 
 var theRegistry LinkedServices
 
@@ -44,7 +51,7 @@ func Initialize(cfg Config) (LinkedServices, error) {
 	return r, nil
 }
 
-func GetLinkedServiceOfType(typ string, name string) (LinkedService, error) {
+func GetLinkedServiceOfType(typ string, name string) (cachelks.LinkedService, error) {
 	for _, r := range theRegistry {
 		if r.Type() == typ && r.Name() == name {
 			return r, nil

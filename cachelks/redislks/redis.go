@@ -3,6 +3,7 @@ package redislks
 import (
 	"context"
 	"fmt"
+	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-common/util/promutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
@@ -42,7 +43,7 @@ func (lks *LinkedService) getClient(aDb int) (*redis.Client, error) {
 
 	rdb, ok := lks.rdbs[aDb]
 	if !ok {
-		lks.rdbs[aDb] = redis.NewClient(&redis.Options{
+		rdb = redis.NewClient(&redis.Options{
 			Addr:         lks.cfg.Addr,
 			Password:     lks.cfg.Passwd,
 			DB:           aDb,
@@ -53,12 +54,13 @@ func (lks *LinkedService) getClient(aDb int) (*redis.Client, error) {
 			WriteTimeout: time.Duration(lks.cfg.WriteTimeout) * time.Millisecond,
 			IdleTimeout:  time.Duration(lks.cfg.IdleTimeout) * time.Millisecond,
 		})
+		lks.rdbs[aDb] = rdb
 	}
 
 	return rdb, nil
 }
 
-func (lks *LinkedService) Set(ctx context.Context, db int, key string, value interface{}) error {
+func (lks *LinkedService) Set(ctx context.Context, key string, value interface{}, opts ...cachelks.CacheOption) error {
 	const semLogContext = "redis-lks::set"
 	beginOf := time.Now()
 	lbls := lks.MetricsLabels(http.MethodPost)
@@ -66,7 +68,7 @@ func (lks *LinkedService) Set(ctx context.Context, db int, key string, value int
 		_ = lks.setMetrics(start, lbls)
 	}(beginOf)
 
-	rdb, err := lks.getClient(db)
+	rdb, err := lks.getClient(RedisUseLinkedServiceConfiguredIndex)
 	if err != nil {
 		return err
 	}
@@ -86,7 +88,7 @@ func (lks *LinkedService) Set(ctx context.Context, db int, key string, value int
 	return err
 }
 
-func (lks *LinkedService) Get(ctx context.Context, db int, key string) (interface{}, error) {
+func (lks *LinkedService) Get(ctx context.Context, key string, opts ...cachelks.CacheOption) (interface{}, error) {
 
 	const semLogContext = "redis-lks::get"
 	beginOf := time.Now()
@@ -95,7 +97,7 @@ func (lks *LinkedService) Get(ctx context.Context, db int, key string) (interfac
 		_ = lks.setMetrics(start, lbls)
 	}(beginOf)
 
-	rdb, err := lks.getClient(db)
+	rdb, err := lks.getClient(RedisUseLinkedServiceConfiguredIndex)
 	if err != nil {
 		return nil, err
 	}

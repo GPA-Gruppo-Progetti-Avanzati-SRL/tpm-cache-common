@@ -1,10 +1,24 @@
 package cachelks
 
-import "context"
+import (
+	"context"
+)
 
 type LinkedService interface {
 	Name() string
 	Type() string
-	Set(ctx context.Context, db int, key string, value interface{}) error
-	Get(ctx context.Context, db int, key string) (interface{}, error)
+	Set(ctx context.Context, key string, value interface{}, opts ...CacheOption) error
+	Get(ctx context.Context, key string, opts ...CacheOption) (interface{}, error)
+}
+
+type CacheOptions struct {
+	Namespace string
+}
+
+type CacheOption func(*CacheOptions)
+
+func WithNamespace(namespace string) CacheOption {
+	return func(o *CacheOptions) {
+		o.Namespace = namespace
+	}
 }
