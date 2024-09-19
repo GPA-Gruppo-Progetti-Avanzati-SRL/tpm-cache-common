@@ -8,6 +8,7 @@ import (
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-http-archive/har"
 	"github.com/rs/zerolog/log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -21,7 +22,7 @@ func Get(id string, ns, cacheKey string, contentType string, linkedServiceRef ca
 		return nil, err
 	}
 
-	req, err := newRequestDefinition(lks, []byte(cacheKey), contentType)
+	req, err := newRequestDefinition(lks, id, ns, []byte(cacheKey), contentType)
 	if err != nil {
 		return nil, err
 	}
@@ -60,17 +61,19 @@ func Get(id string, ns, cacheKey string, contentType string, linkedServiceRef ca
 	return harEntry, nil
 }
 
-func newRequestDefinition(lks cachelks.LinkedService, cacheKey []byte, contentType string) (*har.Request, error) {
+func newRequestDefinition(lks cachelks.LinkedService, id, ns string, cacheKey []byte, contentType string) (*har.Request, error) {
 	var opts []har.RequestOption
 
-	ub := har.UrlBuilder{}
-	ub.WithPort(80)
-	ub.WithScheme("http")
-	ub.WithHostname("localhost")
-	ub.WithPath("myPath")
+	var pathBuilder strings.Builder
+	pathBuilder.WriteString("/")
+	pathBuilder.WriteString(id)
+	if ns != "" {
+		pathBuilder.WriteString("/")
+		pathBuilder.WriteString(ns)
+	}
 
 	opts = append(opts, har.WithMethod("POST"))
-	opts = append(opts, har.WithUrl(ub.Url()))
+	opts = append(opts, har.WithUrl(lks.Url(pathBuilder.String())))
 	opts = append(opts, har.WithBody(cacheKey))
 
 	req := har.Request{
