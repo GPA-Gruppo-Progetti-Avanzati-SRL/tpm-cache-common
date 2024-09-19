@@ -9,6 +9,10 @@ type CacheLinkedServiceRef struct {
 	Typ  string `json:"type,omitempty" yaml:"type,omitempty" mapstructure:"type,omitempty"`
 }
 
+func (edcc *CacheLinkedServiceRef) IsZero() bool {
+	return edcc.Typ == "" && edcc.Name == ""
+}
+
 type LinkedService interface {
 	Name() string
 	Type() string
