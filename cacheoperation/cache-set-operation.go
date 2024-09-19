@@ -11,7 +11,7 @@ const (
 	SemLogCacheKey = "cache-key"
 )
 
-func CacheSet(ns, cacheKey string, v interface{}, linkedServiceRef cachelks.CacheLinkedServiceRef) error {
+func Set(ns, cacheKey string, v interface{}, linkedServiceRef cachelks.CacheLinkedServiceRef) error {
 	const semLogContext = "cache-operation::set"
 	var err error
 	lks, err := cachelksregistry.GetLinkedServiceOfType(linkedServiceRef.Typ, linkedServiceRef.Name)

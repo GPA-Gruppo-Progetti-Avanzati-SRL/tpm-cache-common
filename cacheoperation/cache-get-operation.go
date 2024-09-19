@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func ExecuteGet(id string, ns, cacheKey string, contentType string, linkedServiceRef cachelks.CacheLinkedServiceRef) (*har.Entry, error) {
+func Get(id string, ns, cacheKey string, contentType string, linkedServiceRef cachelks.CacheLinkedServiceRef) (*har.Entry, error) {
 	const semLogContext = "cache-operation::get"
 
 	var err error
@@ -21,7 +21,7 @@ func ExecuteGet(id string, ns, cacheKey string, contentType string, linkedServic
 		return nil, err
 	}
 
-	req, err := newRequestDefinition([]byte(cacheKey), contentType)
+	req, err := newRequestDefinition(lks, []byte(cacheKey), contentType)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func ExecuteGet(id string, ns, cacheKey string, contentType string, linkedServic
 	return harEntry, nil
 }
 
-func newRequestDefinition(cacheKey []byte, contentType string) (*har.Request, error) {
+func newRequestDefinition(lks cachelks.LinkedService, cacheKey []byte, contentType string) (*har.Request, error) {
 	var opts []har.RequestOption
 
 	ub := har.UrlBuilder{}

@@ -18,6 +18,7 @@ type LinkedService interface {
 	Type() string
 	Set(ctx context.Context, key string, value interface{}, opts ...CacheOption) error
 	Get(ctx context.Context, key string, opts ...CacheOption) (interface{}, error)
+	Url(forPath string) string
 }
 
 type CacheOptions struct {

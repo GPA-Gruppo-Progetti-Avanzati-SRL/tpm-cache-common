@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-common/util/promutil"
+	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-http-archive/har"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 	"time"
@@ -29,6 +30,15 @@ func (lks *LinkedService) Name() string {
 
 func (lks *LinkedService) Type() string {
 	return RedisLinkedServiceType
+}
+
+func (lks *LinkedService) Url(forPath string) string {
+	ub := har.UrlBuilder{}
+	//ub.WithPort(80)
+	ub.WithScheme("redis")
+	ub.WithHostname(lks.cfg.Addr)
+	ub.WithPath(forPath)
+	return ub.Url()
 }
 
 func (lks *LinkedService) getClient(aDb int) (*redis.Client, error) {
