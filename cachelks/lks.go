@@ -4,6 +4,11 @@ import (
 	"context"
 )
 
+type CacheLinkedServiceRef struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name,omitempty"`
+	Typ  string `json:"type,omitempty" yaml:"type,omitempty" mapstructure:"type,omitempty"`
+}
+
 type LinkedService interface {
 	Name() string
 	Type() string
