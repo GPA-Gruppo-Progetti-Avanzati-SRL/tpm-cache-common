@@ -70,7 +70,7 @@ func (lks *LinkedService) getClient(aDb int) (*redis.Client, error) {
 	return rdb, nil
 }
 
-func (lks *LinkedService) Set(ctx context.Context, key string, value interface{}, opts ...cachelks.CacheOption) error {
+func (lks *LinkedService) Set(ctx context.Context, key string, value interface{}, opts cachelks.CacheOptions) error {
 	const semLogContext = "redis-lks::set"
 	beginOf := time.Now()
 	lbls := lks.MetricsLabels(http.MethodPost)
@@ -83,10 +83,16 @@ func (lks *LinkedService) Set(ctx context.Context, key string, value interface{}
 		return err
 	}
 
+	// Check to use the specific ttl.
+	dataTtl := lks.cfg.TTL
+	if opts.Ttl > 0 {
+		dataTtl = opts.Ttl
+	}
+
 	var sts *redis.StatusCmd
 	switch tv := value.(type) {
 	case []byte:
-		sts = rdb.Set(ctx, key, tv, lks.cfg.TTL)
+		sts = rdb.Set(ctx, key, tv, dataTtl)
 	default:
 		sts = rdb.Set(ctx, key, value, lks.cfg.TTL)
 	}
@@ -98,7 +104,7 @@ func (lks *LinkedService) Set(ctx context.Context, key string, value interface{}
 	return err
 }
 
-func (lks *LinkedService) Get(ctx context.Context, key string, opts ...cachelks.CacheOption) (interface{}, error) {
+func (lks *LinkedService) Get(ctx context.Context, key string, opts cachelks.CacheOptions) (interface{}, error) {
 
 	const semLogContext = "redis-lks::get"
 	beginOf := time.Now()

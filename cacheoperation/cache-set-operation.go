@@ -11,15 +11,21 @@ const (
 	SemLogCacheKey = "cache-key"
 )
 
-func Set(ns, cacheKey string, v interface{}, linkedServiceRef cachelks.CacheLinkedServiceRef) error {
+func Set(linkedServiceRef cachelks.CacheLinkedServiceRef, cacheKey string, v interface{}, opts ...cachelks.CacheOption) error {
 	const semLogContext = "cache-operation::set"
 	var err error
+
+	var options cachelks.CacheOptions
+	for _, o := range opts {
+		o(&options)
+	}
+
 	lks, err := cachelksregistry.GetLinkedServiceOfType(linkedServiceRef.Typ, linkedServiceRef.Name)
 	if err != nil {
 		return err
 	}
 
-	err = lks.Set(context.Background(), cacheKey, v)
+	err = lks.Set(context.Background(), cacheKey, v, options)
 	if err != nil {
 		return err
 	}

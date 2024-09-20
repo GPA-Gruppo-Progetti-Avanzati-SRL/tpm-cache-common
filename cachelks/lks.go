@@ -2,6 +2,7 @@ package cachelks
 
 import (
 	"context"
+	"time"
 )
 
 type CacheLinkedServiceRef struct {
@@ -16,13 +17,14 @@ func (edcc *CacheLinkedServiceRef) IsZero() bool {
 type LinkedService interface {
 	Name() string
 	Type() string
-	Set(ctx context.Context, key string, value interface{}, opts ...CacheOption) error
-	Get(ctx context.Context, key string, opts ...CacheOption) (interface{}, error)
+	Set(ctx context.Context, key string, value interface{}, opts CacheOptions) error
+	Get(ctx context.Context, key string, opts CacheOptions) (interface{}, error)
 	Url(forPath string) string
 }
 
 type CacheOptions struct {
 	Namespace string
+	Ttl       time.Duration
 }
 
 type CacheOption func(*CacheOptions)
@@ -30,5 +32,11 @@ type CacheOption func(*CacheOptions)
 func WithNamespace(namespace string) CacheOption {
 	return func(o *CacheOptions) {
 		o.Namespace = namespace
+	}
+}
+
+func WithTTTL(ttl time.Duration) CacheOption {
+	return func(o *CacheOptions) {
+		o.Ttl = ttl
 	}
 }

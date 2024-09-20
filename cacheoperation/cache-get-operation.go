@@ -12,17 +12,21 @@ import (
 	"time"
 )
 
-func Get(id string, ns, cacheKey string, contentType string, linkedServiceRef cachelks.CacheLinkedServiceRef) (*har.Entry, error) {
+func Get(linkedServiceRef cachelks.CacheLinkedServiceRef, id string, cacheKey string, contentType string, opts ...cachelks.CacheOption) (*har.Entry, error) {
 	const semLogContext = "cache-operation::get"
 
 	var err error
+	var options cachelks.CacheOptions
+	for _, o := range opts {
+		o(&options)
+	}
 
 	lks, err := cachelksregistry.GetLinkedServiceOfType(linkedServiceRef.Typ, linkedServiceRef.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := newRequestDefinition(lks, id, ns, []byte(cacheKey), contentType)
+	req, err := newGetRequestDefinition(lks, id, []byte(cacheKey), contentType, options)
 	if err != nil {
 		return nil, err
 	}
@@ -35,41 +39,42 @@ func Get(id string, ns, cacheKey string, contentType string, linkedServiceRef ca
 		Request:         req,
 	}
 
-	v, err := lks.Get(context.Background(), cacheKey)
+	v, err := lks.Get(context.Background(), cacheKey, options)
 	elapsed := time.Since(now)
 	if err != nil {
 		log.Error().Err(err).Str(SemLogCacheKey, cacheKey).Dur("elapsed", elapsed).Msg(semLogContext)
-		harEntry, _ = newResponseDefinition(harEntry, http.StatusNotFound, []byte(err.Error()), "text/plain", elapsed)
+		harEntry, _ = newGetResponseDefinition(harEntry, http.StatusNotFound, []byte(err.Error()), "text/plain", elapsed)
 		return harEntry, err
 	}
 
 	if v != nil {
 		if b, ok := v.(string); ok {
 			log.Trace().Str(SemLogCacheKey, cacheKey).Msg(semLogContext + " cache hit")
-			harEntry, _ = newResponseDefinition(harEntry, http.StatusOK, []byte(b), contentType, elapsed)
+			harEntry, _ = newGetResponseDefinition(harEntry, http.StatusOK, []byte(b), contentType, elapsed)
 			return harEntry, nil
 		}
 
 		err = fmt.Errorf("cache key %s resolves to %T", cacheKey, v)
 		log.Error().Err(err).Msg(semLogContext)
-		harEntry, _ = newResponseDefinition(harEntry, http.StatusUnsupportedMediaType, []byte(err.Error()), "text/plain", elapsed)
+		harEntry, _ = newGetResponseDefinition(harEntry, http.StatusUnsupportedMediaType, []byte(err.Error()), "text/plain", elapsed)
 	} else {
 		log.Warn().Str(SemLogCacheKey, cacheKey).Msg(semLogContext + " cache miss")
-		harEntry, err = newResponseDefinition(harEntry, http.StatusNotFound, []byte("cache miss"), "text/plain", elapsed)
+		harEntry, err = newGetResponseDefinition(harEntry, http.StatusNotFound, []byte("cache miss"), "text/plain", elapsed)
 	}
 
 	return harEntry, nil
 }
 
-func newRequestDefinition(lks cachelks.LinkedService, id, ns string, cacheKey []byte, contentType string) (*har.Request, error) {
+func newGetRequestDefinition(lks cachelks.LinkedService, id string, cacheKey []byte, contentType string, options cachelks.CacheOptions) (*har.Request, error) {
+
 	var opts []har.RequestOption
 
 	var pathBuilder strings.Builder
 	pathBuilder.WriteString("/")
 	pathBuilder.WriteString(id)
-	if ns != "" {
+	if options.Namespace != "" {
 		pathBuilder.WriteString("/")
-		pathBuilder.WriteString(ns)
+		pathBuilder.WriteString(options.Namespace)
 	}
 
 	opts = append(opts, har.WithMethod("POST"))
@@ -91,7 +96,7 @@ func newRequestDefinition(lks cachelks.LinkedService, id, ns string, cacheKey []
 	return &req, nil
 }
 
-func newResponseDefinition(harEntry *har.Entry, sc int, resp []byte, contentType string, elapsed time.Duration) (*har.Entry, error) {
+func newGetResponseDefinition(harEntry *har.Entry, sc int, resp []byte, contentType string, elapsed time.Duration) (*har.Entry, error) {
 
 	harEntry.Time = float64(elapsed.Milliseconds())
 	harEntry.Timings = &har.Timings{

@@ -3,6 +3,7 @@ package redislks_test
 import (
 	"context"
 	"fmt"
+	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks/redislks"
 	"github.com/stretchr/testify/require"
 	"sync"
@@ -41,7 +42,7 @@ func TestNewInstanceWithConfig(t *testing.T) {
 
 func putMessage(t *testing.T, lks *redislks.LinkedService, k, v string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	err := lks.Set(context.Background(), k, v)
+	err := lks.Set(context.Background(), k, v, cachelks.CacheOptions{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -51,7 +52,7 @@ func putMessage(t *testing.T, lks *redislks.LinkedService, k, v string, wg *sync
 
 func getMessage(t *testing.T, lks *redislks.LinkedService, k string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	v, err := lks.Get(context.Background(), k)
+	v, err := lks.Get(context.Background(), k, cachelks.CacheOptions{})
 	if err != nil {
 		t.Error(err)
 	}
