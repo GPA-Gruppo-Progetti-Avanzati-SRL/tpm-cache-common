@@ -48,15 +48,17 @@ func Get(linkedServiceRef cachelks.CacheLinkedServiceRef, id string, cacheKey st
 	}
 
 	if v != nil {
-		if b, ok := v.(string); ok {
-			log.Trace().Str(SemLogCacheKey, cacheKey).Msg(semLogContext + " cache hit")
-			harEntry, _ = newGetResponseDefinition(harEntry, http.StatusOK, []byte(b), contentType, elapsed)
-			return harEntry, nil
+		log.Trace().Str(SemLogCacheKey, cacheKey).Msg(semLogContext + " cache hit")
+		switch typedVal := v.(type) {
+		case string:
+			harEntry, _ = newGetResponseDefinition(harEntry, http.StatusOK, []byte(typedVal), contentType, elapsed)
+		case []byte:
+			harEntry, _ = newGetResponseDefinition(harEntry, http.StatusOK, typedVal, contentType, elapsed)
+		default:
+			err = fmt.Errorf("cache key %s resolves to %T", cacheKey, v)
+			log.Error().Err(err).Msg(semLogContext)
+			harEntry, _ = newGetResponseDefinition(harEntry, http.StatusUnsupportedMediaType, []byte(err.Error()), "text/plain", elapsed)
 		}
-
-		err = fmt.Errorf("cache key %s resolves to %T", cacheKey, v)
-		log.Error().Err(err).Msg(semLogContext)
-		harEntry, _ = newGetResponseDefinition(harEntry, http.StatusUnsupportedMediaType, []byte(err.Error()), "text/plain", elapsed)
 	} else {
 		log.Warn().Str(SemLogCacheKey, cacheKey).Msg(semLogContext + " cache miss")
 		harEntry, err = newGetResponseDefinition(harEntry, http.StatusNotFound, []byte("cache miss"), "text/plain", elapsed)
