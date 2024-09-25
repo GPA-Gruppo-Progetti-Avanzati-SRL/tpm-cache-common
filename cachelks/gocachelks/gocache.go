@@ -1,26 +1,25 @@
-package redislks
+package gocachelks
 
 import (
 	"context"
 	"fmt"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks"
+	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks/gocachelks/gocache"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-common/util/promutil"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-http-archive/har"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"time"
-
-	"github.com/go-redis/redis/v8"
-	"github.com/rs/zerolog/log"
 )
 
 type LinkedService struct {
-	cfg  Config
-	rdbs map[int]*redis.Client
+	cfg   Config
+	cache *gocache.Cache
 }
 
 func NewInstanceWithConfig(cfg Config) (*LinkedService, error) {
-	lks := &LinkedService{cfg: cfg}
+	lks := &LinkedService{cfg: cfg, cache: gocache.New(cfg.DefaultExpiration, cfg.CleanupInterval)}
 	return lks, nil
 }
 
@@ -29,79 +28,41 @@ func (lks *LinkedService) Name() string {
 }
 
 func (lks *LinkedService) Type() string {
-	return RedisLinkedServiceType
+	return GoCacheLinkedServiceType
 }
 
 func (lks *LinkedService) Url(forPath string) string {
 	ub := har.UrlBuilder{}
-	//ub.WithPort(80)
-	ub.WithScheme("redis")
-	ub.WithHostname(lks.cfg.Addr)
+	ub.WithPort(1111)
+	ub.WithScheme("go-cache")
+	ub.WithHostname("localhost")
 	ub.WithPath(forPath)
 	return ub.Url()
 }
 
-func (lks *LinkedService) getClient(aDb int) (*redis.Client, error) {
-
-	if aDb == RedisUseLinkedServiceConfiguredIndex {
-		aDb = lks.cfg.Db
-	}
-
-	if lks.rdbs == nil {
-		lks.rdbs = make(map[int]*redis.Client)
-	}
-
-	rdb, ok := lks.rdbs[aDb]
-	if !ok {
-		rdb = redis.NewClient(&redis.Options{
-			Addr:         lks.cfg.Addr,
-			Password:     lks.cfg.Passwd,
-			DB:           aDb,
-			PoolSize:     lks.cfg.PoolSize,
-			MaxRetries:   lks.cfg.MaxRetries,
-			DialTimeout:  time.Duration(lks.cfg.DialTimeout) * time.Millisecond,
-			ReadTimeout:  time.Duration(lks.cfg.ReadTimeout) * time.Millisecond,
-			WriteTimeout: time.Duration(lks.cfg.WriteTimeout) * time.Millisecond,
-			IdleTimeout:  time.Duration(lks.cfg.IdleTimeout) * time.Millisecond,
-		})
-		lks.rdbs[aDb] = rdb
-	}
-
-	return rdb, nil
-}
-
 func (lks *LinkedService) Set(ctx context.Context, key string, value interface{}, opts cachelks.CacheOptions) error {
-	const semLogContext = "redis-lks::set"
+	const semLogContext = "go-cache-lks::set"
 	beginOf := time.Now()
 	lbls := lks.MetricsLabels(http.MethodPost)
 	defer func(start time.Time) {
 		_ = lks.setMetrics(start, lbls)
 	}(beginOf)
 
-	rdb, err := lks.getClient(RedisUseLinkedServiceConfiguredIndex)
-	if err != nil {
-		return err
-	}
-
 	// Check to use the specific ttl.
-	dataTtl := lks.cfg.TTL
+	dataTtl := lks.cfg.DefaultExpiration
 	if opts.Ttl > 0 {
 		dataTtl = opts.Ttl
 	}
 
-	var sts *redis.StatusCmd
 	switch tv := value.(type) {
 	case []byte:
-		sts = rdb.Set(ctx, key, tv, dataTtl)
+		lks.cache.Set(key, tv, dataTtl)
 	default:
-		sts = rdb.Set(ctx, key, value, dataTtl)
+		lks.cache.Set(key, value, dataTtl)
 	}
 
-	err = sts.Err()
-	if err == nil {
-		lbls[MetricIdStatusCode] = "200"
-	}
-	return err
+	lbls[MetricIdStatusCode] = "200"
+	return nil
 }
 
 func (lks *LinkedService) Get(ctx context.Context, key string, opts cachelks.CacheOptions) (interface{}, error) {
@@ -113,19 +74,11 @@ func (lks *LinkedService) Get(ctx context.Context, key string, opts cachelks.Cac
 		_ = lks.setMetrics(start, lbls)
 	}(beginOf)
 
-	rdb, err := lks.getClient(RedisUseLinkedServiceConfiguredIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	val, err := rdb.Get(ctx, key).Result()
-	if err != nil {
-		if err == redis.Nil {
-			log.Warn().Str("key", key).Msg(semLogContext + " cached key not found")
-			lbls[MetricIdStatusCode] = fmt.Sprint(http.StatusNotFound)
-			return nil, nil
-		}
-		return nil, err
+	val, found := lks.cache.Get(key)
+	if !found {
+		log.Warn().Str("key", key).Msg(semLogContext + " cached key not found")
+		lbls[MetricIdStatusCode] = fmt.Sprint(http.StatusNotFound)
+		return nil, nil
 	}
 
 	lbls[MetricIdStatusCode] = fmt.Sprint(http.StatusOK)
@@ -143,7 +96,7 @@ func (lks *LinkedService) MetricsLabels(m string) prometheus.Labels {
 	metricsLabels := prometheus.Labels{
 		MetricIdStatusCode:     fmt.Sprint(http.StatusInternalServerError),
 		MetricIdCacheOperation: m,
-		MetricIdCacheType:      RedisLinkedServiceType,
+		MetricIdCacheType:      GoCacheLinkedServiceType,
 	}
 
 	return metricsLabels
