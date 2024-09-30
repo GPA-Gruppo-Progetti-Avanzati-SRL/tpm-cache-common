@@ -31,6 +31,23 @@ func (lks *LinkedService) Type() string {
 	return GoCacheLinkedServiceType
 }
 
+func (lks *LinkedService) Size() int {
+	return lks.cache.ItemCount()
+}
+
+func (lks *LinkedService) Items() map[string]interface{} {
+	if lks.Size() == 0 {
+		return nil
+	}
+
+	items := make(map[string]interface{}, lks.cache.ItemCount())
+	for n, v := range lks.cache.Items() {
+		items[n] = v.Object
+	}
+
+	return items
+}
+
 func (lks *LinkedService) Url(forPath string) string {
 	ub := har.UrlBuilder{}
 	ub.WithPort(1111)
