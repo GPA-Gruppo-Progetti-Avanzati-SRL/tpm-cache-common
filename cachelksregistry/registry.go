@@ -1,6 +1,7 @@
 package cachelksregistry
 
 import (
+	"errors"
 	"fmt"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks/gocachelks"
@@ -80,4 +81,34 @@ func GetLinkedServiceOfType(typ string, name string) (cachelks.LinkedService, er
 	}
 
 	return nil, fmt.Errorf("cannot find cache of type %s by name [%s]", typ, name)
+}
+
+func GetItems4Cache(typ string, name string) (map[string]interface{}, error) {
+	const semLogContext = "cache-lks-registry::get-items-4-cache"
+
+	if typ != gocachelks.GoCacheLinkedServiceType {
+		err := errors.New("method supported by go-cache only")
+		log.Warn().Err(err).Msg(semLogContext)
+		return nil, err
+	}
+
+	lks, err := GetLinkedServiceOfType(typ, name)
+	if err != nil {
+		log.Error().Err(err).Msg(semLogContext)
+		return nil, err
+	}
+
+	goCacheLks, ok := lks.(*gocachelks.LinkedService)
+	if !ok {
+		err := errors.New("cannot cast linked service to go-cache linked service")
+		log.Warn().Err(err).Msg(semLogContext)
+		return nil, err
+	}
+
+	items := make(map[string]interface{}, goCacheLks.Size())
+	for n, v := range goCacheLks.Items() {
+		items[n] = v.Object
+	}
+
+	return items, nil
 }
