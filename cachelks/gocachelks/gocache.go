@@ -52,7 +52,7 @@ func (lks *LinkedService) Items() map[string]gocache.Item {
 
 func (lks *LinkedService) Url(forPath string) string {
 	ub := har.UrlBuilder{}
-	ub.WithPort(1111)
+	ub.WithPort(0)
 	ub.WithScheme("go-cache")
 	ub.WithHostname("localhost")
 	ub.WithPath(forPath)

@@ -71,16 +71,19 @@ func newGetRequestDefinition(lks cachelks.LinkedService, id string, cacheKey []b
 
 	var opts []har.RequestOption
 
-	var pathBuilder strings.Builder
-	pathBuilder.WriteString("/")
-	pathBuilder.WriteString(id)
-	if options.Namespace != "" {
+	if options.HarPath == "" {
+		var pathBuilder strings.Builder
 		pathBuilder.WriteString("/")
-		pathBuilder.WriteString(options.Namespace)
+		pathBuilder.WriteString(id)
+		if options.Namespace != "" {
+			pathBuilder.WriteString("/")
+			pathBuilder.WriteString(options.Namespace)
+		}
+		options.HarPath = pathBuilder.String()
 	}
 
 	opts = append(opts, har.WithMethod("POST"))
-	opts = append(opts, har.WithUrl(lks.Url(pathBuilder.String())))
+	opts = append(opts, har.WithUrl(lks.Url(options.HarPath)))
 	opts = append(opts, har.WithBody(cacheKey))
 
 	req := har.Request{

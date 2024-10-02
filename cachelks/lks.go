@@ -24,6 +24,7 @@ type LinkedService interface {
 
 type CacheOptions struct {
 	Namespace string
+	HarPath   string
 	Ttl       time.Duration
 }
 
@@ -38,5 +39,11 @@ func WithNamespace(namespace string) CacheOption {
 func WithTTTL(ttl time.Duration) CacheOption {
 	return func(o *CacheOptions) {
 		o.Ttl = ttl
+	}
+}
+
+func WithHarPath(harPath string) CacheOption {
+	return func(o *CacheOptions) {
+		o.HarPath = harPath
 	}
 }
