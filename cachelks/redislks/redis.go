@@ -121,7 +121,7 @@ func (lks *LinkedService) Get(ctx context.Context, key string, opts cachelks.Cac
 	val, err := rdb.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
-			log.Warn().Str("key", key).Msg(semLogContext + " cached key not found")
+			log.Trace().Str("key", key).Msg(semLogContext + " cached key not found")
 			lbls[MetricIdStatusCode] = fmt.Sprint(http.StatusNotFound)
 			return nil, nil
 		}

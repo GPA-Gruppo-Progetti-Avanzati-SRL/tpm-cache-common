@@ -95,7 +95,7 @@ func (lks *LinkedService) Get(ctx context.Context, key string, opts cachelks.Cac
 
 	val, found := lks.cache.Get(key)
 	if !found {
-		log.Warn().Str("key", key).Msg(semLogContext + " cached key not found")
+		log.Trace().Str("key", key).Msg(semLogContext + " cached key not found")
 		lbls[MetricIdStatusCode] = fmt.Sprint(http.StatusNotFound)
 		return nil, nil
 	}

@@ -60,7 +60,7 @@ func Get(linkedServiceRef cachelks.CacheLinkedServiceRef, id string, cacheKey st
 			harEntry, _ = newGetResponseDefinition(harEntry, http.StatusUnsupportedMediaType, []byte(err.Error()), "text/plain", elapsed)
 		}
 	} else {
-		log.Warn().Str(SemLogCacheKey, cacheKey).Msg(semLogContext + " cache miss")
+		log.Trace().Str(SemLogCacheKey, cacheKey).Msg(semLogContext + " cache miss")
 		harEntry, err = newGetResponseDefinition(harEntry, http.StatusNotFound, []byte("cache miss"), "text/plain", elapsed)
 	}
 
