@@ -24,15 +24,21 @@ func TestNewInstanceWithConfig(t *testing.T) {
 
 	for i := 1; i <= 10; i++ {
 		wg.Add(1)
-		go putMessage(t, lks, fmt.Sprintf("MSG-%2d", i), fmt.Sprintf("MSG-%2d-Value", i), &wg)
+		go set(t, lks, fmt.Sprintf("MSG-%2d", i), fmt.Sprintf("MSG-%2d-Value", i), &wg)
 	}
+
+	wg.Add(1)
+	go set(t, lks, fmt.Sprintf("num-messages"), 10, &wg)
 
 	t.Log("Waiting for goroutines  put to finish...")
 	wg.Wait()
 
+	wg.Add(1)
+	go get(t, lks, fmt.Sprintf("num-messages"), &wg)
+
 	for i := 1; i <= 10; i++ {
 		wg.Add(1)
-		go getMessage(t, lks, fmt.Sprintf("MSG-%2d", i), &wg)
+		go get(t, lks, fmt.Sprintf("MSG-%2d", i), &wg)
 	}
 
 	t.Log("Waiting for goroutines  put to finish...")
@@ -40,17 +46,17 @@ func TestNewInstanceWithConfig(t *testing.T) {
 
 }
 
-func putMessage(t *testing.T, lks *redislks.LinkedService, k, v string, wg *sync.WaitGroup) {
+func set(t *testing.T, lks *redislks.LinkedService, k string, v interface{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 	err := lks.Set(context.Background(), k, v, cachelks.CacheOptions{})
 	if err != nil {
 		t.Error(err)
 	}
 
-	t.Logf("cached %s --> %s", k, v)
+	t.Logf("cached %s --> %v", k, v)
 }
 
-func getMessage(t *testing.T, lks *redislks.LinkedService, k string, wg *sync.WaitGroup) {
+func get(t *testing.T, lks *redislks.LinkedService, k string, wg *sync.WaitGroup) {
 	defer wg.Done()
 	v, err := lks.Get(context.Background(), k, cachelks.CacheOptions{})
 	if err != nil {
@@ -58,8 +64,8 @@ func getMessage(t *testing.T, lks *redislks.LinkedService, k string, wg *sync.Wa
 	}
 
 	if v == nil {
-		t.Errorf("no value found for %s --> %v", k, v)
+		t.Errorf("no value found for %s", k)
 	} else {
-		t.Logf("retrieved val %s --> %v", k, v)
+		t.Logf("retrieved val %s --> %v of type %T", k, v, v)
 	}
 }

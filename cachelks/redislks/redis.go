@@ -7,11 +7,10 @@ import (
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-common/util/promutil"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-http-archive/har"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"time"
-
-	"github.com/go-redis/redis/v8"
-	"github.com/rs/zerolog/log"
 )
 
 type LinkedService struct {
@@ -62,7 +61,7 @@ func (lks *LinkedService) getClient(aDb int) (*redis.Client, error) {
 			DialTimeout:  time.Duration(lks.cfg.DialTimeout) * time.Millisecond,
 			ReadTimeout:  time.Duration(lks.cfg.ReadTimeout) * time.Millisecond,
 			WriteTimeout: time.Duration(lks.cfg.WriteTimeout) * time.Millisecond,
-			IdleTimeout:  time.Duration(lks.cfg.IdleTimeout) * time.Millisecond,
+			// IdleTimeout:  time.Duration(lks.cfg.IdleTimeout) * time.Millisecond,
 		})
 		lks.rdbs[aDb] = rdb
 	}
