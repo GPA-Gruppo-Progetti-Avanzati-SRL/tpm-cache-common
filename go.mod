@@ -3,12 +3,12 @@ module github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common
 go 1.23.0
 
 require (
-	github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-common v0.1.66
-	github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-http-archive v0.1.18
-	github.com/prometheus/client_golang v1.20.3
+	github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-common v0.1.73
+	github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-http-archive v0.1.19
+	github.com/prometheus/client_golang v1.20.5
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/rs/zerolog v1.33.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 )
 
 require (
