@@ -2,6 +2,7 @@ package redislks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-cache-common/cachelks"
 	"github.com/GPA-Gruppo-Progetti-Avanzati-SRL/tpm-common/util/promutil"
@@ -119,7 +120,7 @@ func (lks *LinkedService) Get(ctx context.Context, key string, opts cachelks.Cac
 
 	val, err := rdb.Get(ctx, key).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			log.Trace().Str("key", key).Msg(semLogContext + " cached key not found")
 			lbls[MetricIdStatusCode] = fmt.Sprint(http.StatusNotFound)
 			return nil, nil

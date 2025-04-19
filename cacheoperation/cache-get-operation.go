@@ -43,7 +43,7 @@ func Get(linkedServiceRef cachelks.CacheLinkedServiceRef, id string, cacheKey st
 	elapsed := time.Since(now)
 	if err != nil {
 		log.Error().Err(err).Str(SemLogCacheKey, cacheKey).Dur("elapsed", elapsed).Msg(semLogContext)
-		harEntry, _ = newGetResponseDefinition(harEntry, http.StatusNotFound, []byte(err.Error()), "text/plain", elapsed)
+		harEntry, _ = newGetResponseDefinition(harEntry, http.StatusInternalServerError, []byte(err.Error()), "text/plain", elapsed)
 		return harEntry, err
 	}
 
